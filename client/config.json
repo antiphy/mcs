@@ -1,0 +1,4 @@
+{
+    "dsn": "root:123456@/?charset=utf8&parseTime=True&loc=Local",
+    "borkers": ["127.0.0.1"]
+}
