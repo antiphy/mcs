@@ -37,11 +37,10 @@ func main() {
 
 	kConfig := sarama.NewConfig()
 	kConfig.Producer.Return.Errors = true
-	producer, err := sarama.NewSyncProducer(cfg.Borkers, kConfig)
+	producer, err := sarama.NewAsyncProducer(cfg.Borkers, kConfig)
 	if err != nil {
 		panic(err)
 	}
-	defer producer.Close()
 
 	var scanner *bufio.Scanner
 	if isUrl(os.Args[1]) {
@@ -68,6 +67,8 @@ func main() {
 	fmt.Println("processing ...")
 
 	// TODO: add some tips  while processing
+	producerInput := producer.Input()
+	go handleKafkaErrors(producer.Errors())
 	var count int
 	for scanner.Scan() {
 		count++
@@ -82,10 +83,8 @@ func main() {
 			Topic: consts.TopicMessage,
 			Value: sarama.ByteEncoder(bts),
 		}
-		_, _, err = producer.SendMessage(&kMessage)
-		if err != nil {
 
-		}
+		producerInput <- &kMessage
 	}
 	producer.Close()
 
@@ -105,6 +104,10 @@ func main() {
 	// hanle err
 
 	fmt.Printf("process %d line completed", count-1)
+}
+
+func handleKafkaErrors(asyncErrors <-chan *sarama.ProducerError) {
+	// TODO
 }
 
 func isUrl(path string) bool {
